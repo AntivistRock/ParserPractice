@@ -38,4 +38,4 @@ jobs:
         python -m pytest
 
     - name: pytester-cov
-      uses: programmingwithalex/pytester-cov@v1.2.4 -cov-threshold-total 90
+      uses: programmingwithalex/pytester-cov@v1.2.4
