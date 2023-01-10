@@ -1,5 +1,9 @@
 from dataclasses import dataclass
 
+@dataclass
+class CYKGrammarAPI:
+    grammar_rules: list
+    start_nonterm: str
 @dataclass(eq=True, frozen=True)
 class ReducedRule:
     nonterm: str
@@ -11,7 +15,7 @@ class ReducedRule:
 @dataclass(eq=True, frozen=True)
 class Rule:
     nonterm: str
-    layout: tuple
+    layout: list
     right_nonterms_generative: set
     right_nonterms_eps: set
 

@@ -1,7 +1,6 @@
 from queue import Queue
 
-
-from datatypes import Rule, ReducedRule
+from src.ChNF_Converter.datatypes import Rule, ReducedRule, CYKGrammarAPI
 
 
 class Converter:
@@ -23,7 +22,7 @@ class Converter:
         self._nonterms.add(nonterm)
 
         for layout in layouts.split('|'):
-            layout = tuple(layout.strip(' ').split(' '))
+            layout = layout.strip(' ').split(' ')
 
             nonterms_in_layout = set(
                 [symbol for symbol in layout if
@@ -92,7 +91,7 @@ class Converter:
                 continue
 
             for nonterm in rule.right_nonterms_eps:
-                if not is_attainable[rule.nonterm]:
+                if not is_attainable[nonterm]:
                     continue
             new_grammar_rules.append(rule)
 
@@ -114,7 +113,7 @@ class Converter:
                 for idx, symbol in enumerate(rule.layout):
                     if is_term(symbol):
                         new_grammar_rules.append(
-                            Rule(f'<{new_nonterm_idx}>', tuple(symbol), set(),
+                            Rule(f'<{new_nonterm_idx}>', [symbol], set(),
                                  set()))
                         rule.layout[idx] = f'<{new_nonterm_idx}>'
                         rule.right_nonterms_eps.add(f'<{new_nonterm_idx}>')
@@ -136,11 +135,18 @@ class Converter:
                         nonterm = new_grammar_rules[-1].layout[-1]
                     layout_fst_nonterm = rule.layout[idx - 1]
                     connection_nonterm = f'<_{new_nonterm_idx}>'
-                    new_layout = (layout_fst_nonterm, connection_nonterm)
+                    new_layout = [layout_fst_nonterm, connection_nonterm]
 
                     new_grammar_rules.append(
                         Rule(nonterm, new_layout, set(new_layout),
                              set(new_layout)))
+
+                    if idx == len(rule.layout) - 1:
+                        new_grammar_rules.append(
+                            Rule(connection_nonterm, [rule.layout[-1]],
+                                 {rule.layout[-1]},
+                                 {rule.layout[-1]}))
+
                     new_nonterm_idx += 1
             else:
                 new_grammar_rules.append(rule)
@@ -148,6 +154,7 @@ class Converter:
 
     def _del_eps_generative(self):
         eps_generative_nonterms = set()
+
         def find_eps_generative():
             eps_generative = Queue()
             used = [False] * len(self._grammar_rules)
@@ -173,6 +180,7 @@ class Converter:
 
         find_eps_generative()
         new_grammar_rules = list()
+        eps_generative_nonterms = list(eps_generative_nonterms)
         """Selects non eps-generative rules and create necessary rules."""
         for rule in self._grammar_rules:
             if rule.layout[0] == '""':
@@ -184,25 +192,27 @@ class Converter:
 
             if rule.layout[0] in eps_generative_nonterms:
                 new_grammar_rules.append(
-                    Rule(rule.nonterm, tuple(rule.layout[-1]), {rule.layout[-1]},
+                    Rule(rule.nonterm, [rule.layout[-1]],
+                         {rule.layout[-1]},
                          {rule.layout[-1]}))
 
             if rule.layout[-1] in eps_generative_nonterms:
                 new_grammar_rules.append(
-                    Rule(rule.nonterm, tuple(rule.layout[0]), {rule.layout[0]},
+                    Rule(rule.nonterm, [rule.layout[0]], {rule.layout[0]},
                          {rule.layout[0]}))
 
             new_grammar_rules.append(rule)
 
         new_start_nonterm = '<_' + self._start_nonterm[1:-1] + '>'
-        new_grammar_rules.append(Rule(new_start_nonterm, tuple([self._start_nonterm]),
-                                      {self._start_nonterm},
-                                      {self._start_nonterm}))
+        new_grammar_rules.append(
+            Rule(new_start_nonterm, [self._start_nonterm],
+                 {self._start_nonterm},
+                 {self._start_nonterm}))
 
         """Add S' -> S and S' -> eps (if necessary)"""
         if self._start_nonterm in eps_generative_nonterms:
             new_grammar_rules.append(
-                Rule(new_start_nonterm, tuple('""'), set(), set()))
+                Rule(new_start_nonterm, ['""'], set(), set()))
         self._start_nonterm = new_start_nonterm
 
         self._grammar_rules = new_grammar_rules
@@ -210,15 +220,17 @@ class Converter:
     def _transitive_closure(self):
         reduced_grammar_rules = list()
         for rule in self._grammar_rules:
-            reduced_grammar_rules.append(ReducedRule(rule.nonterm, rule.layout))
-        self._grammar_rules = {*reduced_grammar_rules}
+            reduced_grammar_rules.append(
+                ReducedRule(rule.nonterm, tuple(rule.layout)))
+        self._grammar_rules = set(reduced_grammar_rules)
         new_grammar_rules = set()
         while True:
             for fst_rule in self._grammar_rules:
                 if len(fst_rule.layout) == 1 and fst_rule.layout[0][0] == '<':
                     for snd_rule in self._grammar_rules:
                         if fst_rule.layout[0] == snd_rule.nonterm:
-                            new_grammar_rules.add(ReducedRule(fst_rule.nonterm, snd_rule.layout))
+                            new_grammar_rules.add(
+                                ReducedRule(fst_rule.nonterm, snd_rule.layout))
 
                 new_grammar_rules.add(fst_rule)
             if new_grammar_rules == self._grammar_rules:
@@ -231,7 +243,6 @@ class Converter:
                 new_grammar_rules.add(rule)
         self._grammar_rules = new_grammar_rules
 
-
     def convert_to_ch_nf(self):
         self._del_non_generative()
         self._del_unattainable()
@@ -240,14 +251,11 @@ class Converter:
         self._del_eps_generative()
         self._transitive_closure()
 
+        return self._grammar_rules
 
     def print_rules(self):
         for rule in self._grammar_rules:
             print(rule)
 
-
-conv = Converter('/home/antivist/education/FormalLangs/Parsers/BNF_example.txt')
-conv.print_rules()
-print('-------######--------')
-conv.convert_to_ch_nf()
-conv.print_rules()
+    def GetGrammarToCYK(self):
+        return CYKGrammarAPI(self._grammar_rules, self._start_nonterm)
