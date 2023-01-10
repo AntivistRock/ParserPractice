@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class CYKGrammarAPI:
     grammar_rules: list
     start_nonterm: str
+
+
 @dataclass(eq=True, frozen=True)
 class ReducedRule:
     nonterm: str
@@ -11,6 +14,7 @@ class ReducedRule:
 
     def __repr__(self):
         return f'{self.nonterm} -> {self.layout}'
+
 
 @dataclass(eq=True, frozen=True)
 class Rule:
@@ -33,4 +37,3 @@ class Rule:
             return not bool(self.right_nonterms_generative)
         if step == 'eps':
             return not bool(self.right_nonterms_eps)
-

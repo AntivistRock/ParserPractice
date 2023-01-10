@@ -53,13 +53,16 @@ class CYKParser:
                 if rule.layout[0][0] == '"':
                     continue
                 for mid_position in range(start + 1, end):
-                    self._d[rule.nonterm][start][end] |= self._d[rule.layout[0]][start][mid_position] and \
-                                                        self._d[rule.layout[1]][mid_position][end]
+                    self._d[rule.nonterm][start][end] |= \
+                        self._d[rule.layout[0]][start][mid_position] and \
+                        self._d[rule.layout[1]][mid_position][end]
+
     def check_word(self, word):
         self._word = word
 
         for rule in self._grammar_rules:
-            self._d[rule.nonterm] = [[False] * (len(self._word) + 1) for i in range(len(self._word))]
+            self._d[rule.nonterm] = [[False] * (len(self._word) + 1) for i in
+                                     range(len(self._word))]
 
         if word == ['""']:
             return ReducedRule(self._start_nonterm,
