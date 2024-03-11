@@ -50,7 +50,7 @@ res = parser.parse(['"a"', '"b"'])  # equals to ab
 
 * Класс `Converter` представляет из себя вспомогательный класс, который реализует
 приведение к _НФХ_.
-
+```python
 from src.CYK.CYK import CYKParser
 
 parser = CYKParser('BNF_example.txt', is_in_ch_nf=False)
